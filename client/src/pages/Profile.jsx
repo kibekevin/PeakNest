@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import UploadWidget from '../components/uploadWidget/uploadWidget.jsx';
 import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserStart, deleteUserSuccess, deleteUserFailure, signoutStart, signoutSuccess, signoutFailure } from '../redux/user/userSlice.js';
 import { useDispatch } from 'react-redux';
-
+import { Link } from 'react-router-dom';    
 
 const Profile = () => {
 
@@ -113,6 +113,9 @@ const Profile = () => {
                 <input type="email" name='email'  className='border p-3 rounded-lg' value={email} onChange={(e) => setEmail(e.currentTarget.value)}/>
                 <input type="password" placeholder='password' id='password' className='border p-3 rounded-lg' value={password} onChange={(e) => setPassword(e.target.value)}/>
                 <button disabled={loading} type='submit' className='bg-slate-700 text-white uppercase rounded-lg hover:opacity-90 disabled:opacity-80 p-2 cursor-pointer'>{loading ? "Loading..." : "Update"}</button>
+                <Link to='/create-listing'>
+                    <button className='bg-green-700 text-white uppercase text-center w-full rounded-lg hover:opacity-90 disabled:opacity-80 p-2 cursor-pointer'>Create Listing</button>
+                </Link>
             </form>
             <div className='flex justify-between mt-5'>
                 <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete Account</span>
