@@ -71,6 +71,8 @@ const Profile = () => {
         }
     }
 
+
+    // Signout
     const handleSignout = async() => {
         try {
             dispatch(signoutStart());
