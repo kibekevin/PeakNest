@@ -13,6 +13,8 @@ const Profile = () => {
     const [email, setEmail] = useState(currentUser.email);
     const [password, setPassword] = useState(currentUser.password);
     const [updateSuccess, setUpdateSuccess] = useState(false);
+    const [errorShowListings, setErrorShowListings] = useState(false);
+    const [userListings, setUserListings] = useState([]);
 
     const dispatch = useDispatch();
 
@@ -92,6 +94,21 @@ const Profile = () => {
         }
     }
 
+    const handleShowListings = async() => {
+        try {
+            setErrorShowListings(false);
+            const res = await fetch(`/api/user/listings/${currentUser._id}`)
+            const data = await res.json();
+            if (data.success === false) {
+                setErrorShowListings(true);
+                return;
+            }
+            setUserListings(data);
+        } catch (error) {
+            setErrorShowListings(true);
+        }
+    }
+
   return (
     <div className='p-3 max-w-lg mx-auto'>
         <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
@@ -123,6 +140,31 @@ const Profile = () => {
             </div>
             {error && <span className='text-red-700'>{error}</span>}
             {updateSuccess && <span className='text-green-700'>Profile updated successfully</span>}
+            <button onClick={handleShowListings} className='text-blue-700 cursor-pointer mt-5 mb-5 w-full'>Show Listings</button>
+            {errorShowListings && <span className='text-red-700'>Error showing listings</span>}
+            {userListings && userListings.length > 0 && 
+            <div className='flex flex-col gap-2'>
+                <h1 className='text-2xl font-semibold text-center my-5'>Your Listings</h1>
+            {userListings.map((listing) => (
+                <div key={listing._id} className='border rounded-lg mb-5 hover:bg-slate-200'>
+                    <Link to={`/update-listing/${listing._id}`}>
+                        <div className='flex flex-row items-center gap-2 justify-between w-full p-2'>
+                            <img src={listing.imageUrls[0]} alt="listing cover" className='h-18 w-24 object-cover rounded-lg'/>
+                            <div className='flex justify-between items-center gap-5'>
+                                <span className='font-semibold truncate'>{listing.title}</span>
+                                <span className='text-sm text-gray-500 truncate'>${listing.regularPrice}</span>
+                            </div>
+                            <div className='flex flex-col gap-2'>
+                                <button className='text-red-700 cursor-pointer border border-red-700 p-1 rounded-lg hover:bg-red-700 hover:text-white'>Delete</button>
+                                <button className='text-blue-700 cursor-pointer border border-blue-700 p-1 rounded-lg hover:bg-blue-700 hover:text-white'>Edit</button>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+            ))}
+            </div>
+            }
+
     </div>
   )
 }
