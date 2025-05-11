@@ -15,6 +15,8 @@ const Profile = () => {
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [errorShowListings, setErrorShowListings] = useState(false);
     const [userListings, setUserListings] = useState([]);
+    const [errorDeleteListing, setErrorDeleteListing] = useState(false);
+
 
     const dispatch = useDispatch();
 
@@ -109,6 +111,22 @@ const Profile = () => {
         }
     }
 
+    const handleDeleteListing = async(id) => {
+        try {
+            const res = await fetch(`/api/listing/delete/${id}`, {
+                method: 'DELETE',
+            })
+            const data = await res.json();
+            if (data.success === false) {
+                setErrorDeleteListing(true);
+                return;
+            }
+            setUserListings(userListings.filter((listing) => listing._id !== id));
+        } catch (error) {
+            setErrorDeleteListing(true);
+        }   
+    }
+
   return (
     <div className='p-3 max-w-lg mx-auto'>
         <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
@@ -146,7 +164,7 @@ const Profile = () => {
             <div className='flex flex-col gap-2'>
                 <h1 className='text-2xl font-semibold text-center my-5'>Your Listings</h1>
             {userListings.map((listing) => (
-                <div key={listing._id} className='border rounded-lg mb-5 hover:bg-slate-200'>
+                <div key={listing._id} className='flex flex-row justify-between border rounded-lg mb-5 hover:bg-slate-200'>
                     <Link to={`/update-listing/${listing._id}`}>
                         <div className='flex flex-row items-center gap-2 justify-between w-full p-2'>
                             <img src={listing.imageUrls[0]} alt="listing cover" className='h-18 w-24 object-cover rounded-lg'/>
@@ -154,12 +172,14 @@ const Profile = () => {
                                 <span className='font-semibold truncate'>{listing.title}</span>
                                 <span className='text-sm text-gray-500 truncate'>${listing.regularPrice}</span>
                             </div>
-                            <div className='flex flex-col gap-2'>
-                                <button className='text-red-700 cursor-pointer border border-red-700 p-1 rounded-lg hover:bg-red-700 hover:text-white'>Delete</button>
-                                <button className='text-blue-700 cursor-pointer border border-blue-700 p-1 rounded-lg hover:bg-blue-700 hover:text-white'>Edit</button>
-                            </div>
                         </div>
                     </Link>
+                    <div className='flex flex-col justify-between p-2 gap-2'>
+                        <button onClick={() => handleDeleteListing(listing._id)} className='text-red-700 cursor-pointer border border-red-700 p-1 rounded-lg hover:bg-red-700 hover:text-white'>Delete</button>
+                        <button className='text-blue-700 cursor-pointer border border-blue-700 p-1 rounded-lg hover:bg-blue-700 hover:text-white'>Edit</button>
+                        
+                    </div>
+                        
                 </div>
             ))}
             </div>
