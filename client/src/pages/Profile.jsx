@@ -164,7 +164,7 @@ const Profile = () => {
             <div className='flex flex-col gap-2'>
                 <h1 className='text-2xl font-semibold text-center my-5'>Your Listings</h1>
             {userListings.map((listing) => (
-                <div key={listing._id} className='flex flex-row justify-between border rounded-lg mb-5 hover:bg-slate-200'>
+                <div key={listing._id} className='flex flex-row justify-between border rounded-lg mb-5 hover:bg-slate-200 gap-2'>
                     <Link to={`/update-listing/${listing._id}`}>
                         <div className='flex flex-row items-center gap-2 justify-between w-full p-2'>
                             <img src={listing.imageUrls[0]} alt="listing cover" className='h-18 w-24 object-cover rounded-lg'/>
@@ -175,8 +175,10 @@ const Profile = () => {
                         </div>
                     </Link>
                     <div className='flex flex-col justify-between p-2 gap-2'>
-                        <button onClick={() => handleDeleteListing(listing._id)} className='text-red-700 cursor-pointer border border-red-700 p-1 rounded-lg hover:bg-red-700 hover:text-white'>Delete</button>
-                        <button className='text-blue-700 cursor-pointer border border-blue-700 p-1 rounded-lg hover:bg-blue-700 hover:text-white'>Edit</button>
+                        <button onClick={() => handleDeleteListing(listing._id)} className='text-red-700 cursor-pointer border border-red-700 p-1 rounded-lg hover:bg-red-700 hover:text-white w-full'>Delete</button>
+                        <Link to={`/update-listing/${listing._id}`}>
+                            <button className='text-blue-700 cursor-pointer border border-blue-700 p-1 rounded-lg hover:bg-blue-700 hover:text-white w-full'>Edit</button>
+                        </Link>
                         
                     </div>
                         
