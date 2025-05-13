@@ -44,7 +44,7 @@ const UpdateListing = () => {
 
         fetchListing();
         
-    }, []);
+    }, [params.id]);
 
 
     const handleFileChange = (e) => {

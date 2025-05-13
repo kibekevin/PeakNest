@@ -9,6 +9,7 @@ import CreateListing from './pages/CreateListing'
 import Header from './components/Header'
 import PrivateRoute from './components/PrivateRoute'
 import UpdateListing from './pages/UpdateListing'
+import Listing from './pages/Listing'
 const App = () => {
   return (
     <BrowserRouter>
@@ -23,6 +24,7 @@ const App = () => {
                 <Route path='/update-listing/:id' element={<UpdateListing/>}/>
             </Route>
             <Route path='/about' element={<About/>}/>
+            <Route path='/listing/:id' element={<Listing/>}/>
         </Routes>
     </BrowserRouter>
   )

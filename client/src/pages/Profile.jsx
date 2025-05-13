@@ -165,7 +165,7 @@ const Profile = () => {
                 <h1 className='text-2xl font-semibold text-center my-5'>Your Listings</h1>
             {userListings.map((listing) => (
                 <div key={listing._id} className='flex flex-row justify-between border rounded-lg mb-5 hover:bg-slate-200 gap-2'>
-                    <Link to={`/update-listing/${listing._id}`}>
+                    <Link to={`/listing/${listing._id}`}>
                         <div className='flex flex-row items-center gap-2 justify-between w-full p-2'>
                             <img src={listing.imageUrls[0]} alt="listing cover" className='h-18 w-24 object-cover rounded-lg'/>
                             <div className='flex justify-between items-center gap-5'>
