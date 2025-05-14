@@ -7,9 +7,11 @@ import OAuth from '../components/OAuth';
 const SignIn = () => {
 
     const [formData, setFormData] = useState({});
-    const { loading, error } = useSelector((state) => state.user);
+    //const { loading, error } = useSelector((state) => state.user);
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) =>{
         setFormData({
@@ -23,6 +25,7 @@ const SignIn = () => {
 
         try {
             dispatch(signInStart());
+            setLoading(true);
             const res = await fetch('/api/auth/signin', {
                 method: 'POST',
                 headers: {
@@ -31,18 +34,32 @@ const SignIn = () => {
                 body: JSON.stringify(formData)
             })
             const data = await res.json();
-            if (data.success === false) {
-                dispatch(signInFailure(data.message))
+            setLoading(false);
+            if (!data) {
+                dispatch(signInFailure('No data received from server'));
                 return;
             }
-            dispatch(signInSuccess(data))
-            console.log(data);
+
+            if (data.success === false) {
+                dispatch(signInFailure(data.message || 'Sign in failed'));
+                return;
+            }
+
+            // if (!data.user) {
+            //     dispatch(signInFailure('Invalid user data received'));
+            //     console.log(data);
+            //     return;
+            // }
+
+            dispatch(signInSuccess(data));
             navigate('/');
 
         } catch (error) {
-            dispatch(signInFailure(error.message))
+            setError(error.message || 'An error occurred during sign in');
+            dispatch(signInFailure(error.message || 'An error occurred during sign in'));
+            setLoading(false);
+            return;
         }
-        
     }
 
   return (

@@ -4,15 +4,17 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { FaShare, FaMapMarkerAlt, FaBed, FaBath, FaParking, FaChair } from 'react-icons/fa';
-
+import { FaShare, FaMapMarkerAlt, FaBed, FaBath, FaParking, FaChair, FaPhoneAlt } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import Contact from '../components/Contact';
 const Listing = () => {
     const params = useParams();
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [copied, setCopied] = useState(false);
-
+    const { currentUser } = useSelector((state) => state.user);
+    const [contactSeller, setContactSeller] = useState(false);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -111,7 +113,12 @@ const Listing = () => {
                                     </p>
                                 </div> 
                             }
-                            
+                            {currentUser && !contactSeller && (
+                                <button className='bg-slate-700 text-white px-4 py-2 rounded-md flex items-center gap-2 w-fit hover:bg-slate-800 mt-6 mb-10 cursor-pointer' onClick={() => setContactSeller(true)}>
+                                    <FaPhoneAlt/> Contact Seller
+                                </button>
+                            )}
+                            {contactSeller && <Contact listing={listing} />}
                         </div>
                     </>
                 )}  
