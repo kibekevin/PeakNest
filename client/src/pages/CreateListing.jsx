@@ -7,7 +7,6 @@ const CreateListing = () => {
     const [uploading, setUploading] = useState(false);
     const [imageUrls, setImageUrls] = useState([]);
     const [uploadError, setUploadError] = useState(null);
-    const [imagePreviews, setImagePreviews] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const { currentUser } = useSelector(state => state.user);
@@ -17,7 +16,7 @@ const CreateListing = () => {
         title: '',
         description: '',
         address: '',
-        sale: false,
+        sale: true,
         rent: false,
         parking: false,
         furnished: false,
@@ -27,6 +26,7 @@ const CreateListing = () => {
         regularPrice: 0,
         discountedPrice: 0,
     });
+    const [draggedImage, setDraggedImage] = useState(null);
 
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
@@ -35,26 +35,59 @@ const CreateListing = () => {
             return;
         }
 
-        // Create preview URLs for selected images
-        const previews = selectedFiles.map(file => ({
-            url: URL.createObjectURL(file),
-            name: file.name
-        }));
-
         setFiles(selectedFiles);
-        setImagePreviews(previews);
         setUploadError(null);
     };
 
     const removeImage = (index) => {
-        const newFiles = files.filter((_, i) => i !== index);
-        const newPreviews = imagePreviews.filter((_, i) => i !== index);
+        const newUrls = imageUrls.filter((_, i) => i !== index);
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+    };
+
+    const setAsCover = (index) => {
+        const newUrls = [...imageUrls];
+        const selectedImage = newUrls[index];
+        // Remove the selected image from its current position
+        newUrls.splice(index, 1);
+        // Add it to the beginning of the array
+        newUrls.unshift(selectedImage);
         
-        // Revoke the object URL to avoid memory leaks
-        URL.revokeObjectURL(imagePreviews[index].url);
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+    };
+
+    const handleDragStart = (index) => {
+        setDraggedImage(index);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (dropIndex) => {
+        if (draggedImage === null) return;
+
+        const newUrls = [...imageUrls];
+        const draggedUrl = newUrls[draggedImage];
         
-        setFiles(newFiles);
-        setImagePreviews(newPreviews);
+        // Remove the dragged image from its original position
+        newUrls.splice(draggedImage, 1);
+        // Insert it at the new position
+        newUrls.splice(dropIndex, 0, draggedUrl);
+        
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+        setDraggedImage(null);
     };
 
     const handleUpload = async () => {
@@ -67,7 +100,30 @@ const CreateListing = () => {
         setUploadError(null);
         const uploadPromises = [];
 
-        for (let i = 0; i < files.length; i++) {
+        // First, upload the first image separately to ensure it's the cover
+        const firstImageFormData = new FormData();
+        firstImageFormData.append('file', files[0]);
+        firstImageFormData.append('upload_preset', 'peaknest');
+
+        try {
+            const firstImageResponse = await fetch(
+                'https://api.cloudinary.com/v1_1/dnfnbnmwr/image/upload',
+                {
+                    method: 'POST',
+                    body: firstImageFormData,
+                }
+            );
+            const firstImageData = await firstImageResponse.json();
+            uploadPromises.push(firstImageData.secure_url);
+        } catch (error) {
+            console.error('Error uploading cover image:', error);
+            setUploadError('Error uploading cover image. Please try again.');
+            setUploading(false);
+            return;
+        }
+
+        // Then upload the rest of the images
+        for (let i = 1; i < files.length; i++) {
             const formData = new FormData();
             formData.append('file', files[i]);
             formData.append('upload_preset', 'peaknest');
@@ -98,9 +154,6 @@ const CreateListing = () => {
             }));
             console.log('Uploaded images:', urls);
             setUploadError(null);
-            // Clear image previews after successful upload
-            imagePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
-            setImagePreviews([]);
             setFiles([]);
         } catch (error) {
             console.error('Error uploading images:', error);
@@ -152,7 +205,14 @@ const CreateListing = () => {
                     bathrooms: Number(formData.bathrooms),
                     regularPrice: Number(formData.regularPrice),
                     discountedPrice: Number(formData.discountedPrice),
-                    imageUrls: formData.images
+                    imageUrls: formData.images,
+                    type: formData.sale ? 'sale' : 'rent',
+                    offer: formData.offer,
+                    parking: formData.parking,
+                    furnished: formData.furnished,
+                    address: formData.address,
+                    title: formData.title,
+                    description: formData.description
                 }),
             });
 
@@ -191,7 +251,7 @@ const CreateListing = () => {
     // Cleanup preview URLs when component unmounts
     useEffect(() => {
         return () => {
-            imagePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
+            imageUrls.forEach(url => URL.revokeObjectURL(url));
         };
     }, []);
 
@@ -377,30 +437,48 @@ const CreateListing = () => {
                         </button>
                     </div>
                     
-                    {/* Image Previews */}
-                    {imagePreviews.length > 0 && (
+                    {/* Uploaded Images Preview */}
+                    {imageUrls.length > 0 && (
                         <div className="mt-4">
-                            <p className="font-semibold mb-2">Selected Images:</p>
+                            <p className="font-semibold mb-2">Uploaded Images: <span className="text-sm text-gray-500">(Drag to reorder)</span></p>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {imagePreviews.map((preview, index) => (
-                                    <div key={index} className="relative group">
+                                {imageUrls.map((url, index) => (
+                                    <div 
+                                        key={index} 
+                                        className="relative group cursor-move"
+                                        draggable
+                                        onDragStart={() => handleDragStart(index)}
+                                        onDragOver={handleDragOver}
+                                        onDrop={() => handleDrop(index)}
+                                    >
                                         <img 
-                                            src={preview.url} 
-                                            alt={`Preview ${index + 1}`}
+                                            src={url} 
+                                            alt={`Uploaded ${index + 1}`}
                                             className="w-full h-32 object-cover rounded-lg"
                                         />
+                                        <div className="absolute top-2 right-2 flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => removeImage(index)}
-                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             ×
                                         </button>
-                                        {index === 0 && (
+                                        </div>
+                                        {index === 0 ? (
                                             <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
                                                 Cover Image
                                             </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setAsCover(index)}
+                                                className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                Set as Cover
+                                            </button>
                                         )}
+                                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-opacity pointer-events-none"></div>
                                     </div>
                                 ))}
                             </div>

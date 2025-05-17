@@ -7,9 +7,9 @@ const UpdateListing = () => {
     const [uploading, setUploading] = useState(false);
     const [imageUrls, setImageUrls] = useState([]);
     const [uploadError, setUploadError] = useState(null);
-    const [imagePreviews, setImagePreviews] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [draggedImage, setDraggedImage] = useState(null);
     const { currentUser } = useSelector(state => state.user);
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ const UpdateListing = () => {
         title: '',
         description: '',
         address: '',
-        sale: false,
+        sale: true,
         rent: false,
         parking: false,
         furnished: false,
@@ -29,56 +29,98 @@ const UpdateListing = () => {
     });
     const params = useParams();
 
-
     useEffect(() => { 
         const fetchListing = async () => {
-            const listingId = params.id; 
-            const res = await fetch(`/api/listing/get/${listingId}`);
-            const data = await res.json();
-            if (data.success === false) {
-                console.log(data.message);
-                return;
+            try {
+                const listingId = params.id; 
+                const res = await fetch(`/api/listing/get/${listingId}`);
+                const data = await res.json();
+                if (data.success === false) {
+                    console.log(data.message);
+                    return;
+                }
+                
+                // Ensure we're setting both the form data and image URLs
+                setFormData({
+                    ...data,
+                    images: data.images || []
+                });
+                setImageUrls(data.images || []);
+                
+                //console.log('Loaded listing data:', data);
+            } catch (error) {
+                console.error('Error fetching listing:', error);
             }
-            setFormData(data);
         }
 
         fetchListing();
-        
     }, [params.id]);
-
 
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
-        if (selectedFiles.length > 15) {
-            setUploadError('Maximum 15 images allowed');
+        if (selectedFiles.length + imageUrls.length > 15) {
+            setUploadError('Maximum 15 images allowed in total');
             return;
         }
 
-        // Create preview URLs for selected images
-        const previews = selectedFiles.map(file => ({
-            url: URL.createObjectURL(file),
-            name: file.name
-        }));
-
         setFiles(selectedFiles);
-        setImagePreviews(previews);
         setUploadError(null);
     };
 
     const removeImage = (index) => {
-        const newFiles = files.filter((_, i) => i !== index);
-        const newPreviews = imagePreviews.filter((_, i) => i !== index);
+        const newUrls = imageUrls.filter((_, i) => i !== index);
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+    };
+
+    const setAsCover = (index) => {
+        const newUrls = [...imageUrls];
+        const selectedImage = newUrls[index];
+        newUrls.splice(index, 1);
+        newUrls.unshift(selectedImage);
         
-        // Revoke the object URL to avoid memory leaks
-        URL.revokeObjectURL(imagePreviews[index].url);
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+    };
+
+    const handleDragStart = (index) => {
+        setDraggedImage(index);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (dropIndex) => {
+        if (draggedImage === null) return;
+
+        const newUrls = [...imageUrls];
+        const draggedUrl = newUrls[draggedImage];
+        newUrls.splice(draggedImage, 1);
+        newUrls.splice(dropIndex, 0, draggedUrl);
         
-        setFiles(newFiles);
-        setImagePreviews(newPreviews);
+        setImageUrls(newUrls);
+        setFormData(prev => ({
+            ...prev,
+            images: newUrls
+        }));
+        setDraggedImage(null);
     };
 
     const handleUpload = async () => {
-        if (files.length === 0 || files.length > 15) {
-            setUploadError('Error uploading images. Please try again.');
+        if (files.length === 0) {
+            setUploadError('Please select images to upload');
+            return;
+        }
+        
+        if (files.length + imageUrls.length > 15) {
+            setUploadError('Maximum 15 images allowed in total');
             return;
         }
         
@@ -109,17 +151,14 @@ const UpdateListing = () => {
 
         try {
             const urls = await Promise.all(uploadPromises);
-            setImageUrls(urls);
-            // Update formData with the uploaded image URLs
+            const newUrls = [...imageUrls, ...urls];
+            setImageUrls(newUrls);
             setFormData(prev => ({
                 ...prev,
-                images: urls
+                images: newUrls
             }));
             console.log('Uploaded images:', urls);
             setUploadError(null);
-            // Clear image previews after successful upload
-            imagePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
-            setImagePreviews([]);
             setFiles([]);
         } catch (error) {
             console.error('Error uploading images:', error);
@@ -176,7 +215,7 @@ const UpdateListing = () => {
             });
 
             const data = await res.json();
-            console.log(data);
+            //console.log(data);
             if (data.success === false) {
                 throw new Error(data.message);
             }
@@ -187,8 +226,7 @@ const UpdateListing = () => {
                 title: '',
                 description: '',
                 address: '',
-                sale: false,
-                rent: false,
+                type: formData.sale ? 'sale' : 'rent',
                 parking: false,
                 furnished: false,
                 offer: false,
@@ -210,7 +248,7 @@ const UpdateListing = () => {
     // Cleanup preview URLs when component unmounts
     useEffect(() => {
         return () => {
-            imagePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
+            imageUrls.forEach(url => URL.revokeObjectURL(url));
         };
     }, []);
 
@@ -396,30 +434,52 @@ const UpdateListing = () => {
                         </button>
                     </div>
                     
-                    {/* Image Previews */}
-                    {imagePreviews.length > 0 && (
+                    {/* Uploaded Images Preview */}
+                    {imageUrls.length > 0 && (
                         <div className="mt-4">
-                            <p className="font-semibold mb-2">Selected Images:</p>
+                            <p className="font-semibold mb-2">Images: <span className="text-sm text-gray-500">(Drag to reorder)</span></p>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {imagePreviews.map((preview, index) => (
-                                    <div key={index} className="relative group">
+                                {imageUrls.map((url, index) => (
+                                    <div 
+                                        key={url} 
+                                        className="relative group cursor-move"
+                                        draggable
+                                        onDragStart={() => handleDragStart(index)}
+                                        onDragOver={handleDragOver}
+                                        onDrop={() => handleDrop(index)}
+                                    >
                                         <img 
-                                            src={preview.url} 
-                                            alt={`Preview ${index + 1}`}
+                                            src={url} 
+                                            alt={`Uploaded ${index + 1}`}
                                             className="w-full h-32 object-cover rounded-lg"
+                                            onError={(e) => {
+                                                console.error('Error loading image:', url);
+                                                e.target.src = 'https://via.placeholder.com/300x200?text=Image+Error';
+                                            }}
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeImage(index)}
-                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            ×
-                                        </button>
-                                        {index === 0 && (
+                                        <div className="absolute top-2 right-2 flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(index)}
+                                                className="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                        {index === 0 ? (
                                             <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
                                                 Cover Image
                                             </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setAsCover(index)}
+                                                className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                Set as Cover
+                                            </button>
                                         )}
+                                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 transition-opacity pointer-events-none"></div>
                                     </div>
                                 ))}
                             </div>
