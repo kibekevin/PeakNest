@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ListingCard from '../components/ListingCard';
 
 
 const Search = () => {
@@ -8,6 +9,7 @@ const Search = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errorGettingListings, setErrorGettingListings] = useState(false);
+    const [showMoreListings, setShowMoreListings] = useState(false);
 
     const [sideBarData, setSideBarData] = useState({
         searchTerm: '',
@@ -40,10 +42,16 @@ const Search = () => {
                 const searchQuery = urlParams.toString();
                 const res = await fetch(`/api/listing/get?${searchQuery}`);
                 const data = await res.json();
+                if(data.length > 8) {
+                    setShowMoreListings(true);
+                }else{
+                    setShowMoreListings(false);
+                }
                 setListings(data);
                 setLoading(false);
             } catch (error) {
                 console.log(error);
+                setShowMoreListings(false);
                 setErrorGettingListings(true);
                 setLoading(false);
             }
@@ -86,13 +94,25 @@ const Search = () => {
         const searchQuery = urlParams.toString();
         navigate(`/search?${searchQuery}`);
     }
+    const handleShowMoreListings = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const startIndex = listings.length;
+        urlParams.set('startIndex', startIndex);
+        const searchQuery = urlParams.toString();
+        const res = await fetch(`/api/listing/get?${searchQuery}`);
+        const data = await res.json();
+        setListings([...listings, ...data]);
+        if(data.length < 9) {
+            setShowMoreListings(false);
+        }
+    }
     return (
         <div className='p-4 gap-4 flex flex-col md:flex-row'>
-            <div className='border-b-2 border-slate-200 pb-2 sm:border-r-2 sm:border-b-0 md:min-h-screen md:w-1/4'>
+            <div className='border-b-2 border-slate-200 pb-2 sm:border-r-2 sm:border-b-0 md:min-h-screen md:flex-2'>
                 <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
                     <div className='flex gap-2 items-center'>
                         <label className='text-slate-600 whitespace-nowrap font-bold'>Search Term</label>
-                        <input type="text" placeholder='Search. e.g. "Apartment"' className='w-full p-2 rounded-md border-2 border-slate-300' id='search-term' value={sideBarData.searchTerm} onChange={handleChange}/>
+                        <input type="text" placeholder='Search. e.g. "Apartment"' className=' p-2 rounded-md border-2 border-slate-300' id='search-term' value={sideBarData.searchTerm} onChange={handleChange}/>
                     </div>
                     <div>
                         <h2 className='text-slate-600 font-bold'>Filters</h2>
@@ -136,8 +156,25 @@ const Search = () => {
                 </form>
                 
             </div>
-            <div>
+            <div className='flex flex-col gap-4 p-1 md:flex-8'>
                 <h1 className='text-2xl font-bold text-center text-black'>Search Results</h1>
+                <div className='flex flex-wrap gap-4 w-full'>
+                    {!loading && listings.length === 0 && (
+                        <p className='text-center text-slate-600 font-bold w-full'>No listings found!</p>
+                    )}
+                    {errorGettingListings && (
+                        <p className='text-center text-red-500 w-full'>Error getting listings</p>
+                    )}
+                    {loading && (
+                        <p className='text-center text-slate-600 font-bold w-full'>Loading...</p>
+                    )}
+                    {!loading && !errorGettingListings && listings && listings.map((listing) => (
+                        <ListingCard key={listing._id} listing={listing}/>
+                    ))}
+                </div>
+                {showMoreListings && (
+                    <button className='bg-slate-600 text-white p-2 rounded-md min-w-24 self-center mt-4 hover:bg-slate-700 transition-colors cursor-pointer' onClick={handleShowMoreListings}>Show More</button>
+                )}
             </div>
         </div>
     );

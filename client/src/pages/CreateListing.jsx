@@ -392,8 +392,9 @@ const CreateListing = () => {
                                 onChange={(e) => setFormData(prev => ({ ...prev, regularPrice: parseInt(e.target.value) }))}
                             />
                             <div className="flex flex-col items-center">
-                                <span>Regular Price</span>
-                                <span className='text-xm text-gray-500'>($/month)</span>
+                                <span>Price</span>
+                                {formData.rent && <span className='text-xm text-gray-500'>($/month)</span>}
+                                {formData.sale && <span className='text-xm text-gray-500'>($)</span>}
                             </div>
                         </div>
                         {formData.offer && (
@@ -408,7 +409,8 @@ const CreateListing = () => {
                             />
                             <div className="flex flex-col items-center">
                                 <span>Discounted Price</span>
-                                <span className='text-xm text-gray-500'>($/month)</span>
+                                {formData.rent && <span className='text-xm text-gray-500'>($/month)</span>}
+                                {formData.sale && <span className='text-xm text-gray-500'>($)</span>}
                                 </div>
                             </div>
                         )}
