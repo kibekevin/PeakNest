@@ -21,7 +21,7 @@ const Home = () => {
         <div className='max-w-6xl mx-auto mt-10 md:mt-20 lg:mt-20'>
             <h1 className='text-2xl md:text-4xl lg:text-6xl font-bold mb-4 md:mb-8 lg:mb-12 text-slate-800'>
                 Find your next <span className='text-slate-500'>Perfect</span> <br/>
-                place with <span className='text-slate-500'>Ease</span>
+                space with <span className='text-slate-500'>Ease</span>
             </h1>
             <div className='mb-4 md:mb-8 lg:mb-12 text-slate-600'>
                 <p>

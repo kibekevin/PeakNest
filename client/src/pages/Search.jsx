@@ -107,8 +107,8 @@ const Search = () => {
         }
     }
     return (
-        <div className='p-4 gap-4 flex flex-col md:flex-row'>
-            <div className='border-b-2 border-slate-200 pb-2 sm:border-r-2 sm:border-b-0 md:min-h-screen md:flex-2'>
+        <div className='p-4 gap-4 flex flex-col md:flex-col max-w-6xl mx-auto'>
+            <div className='border-b-2 border-slate-200 pb-2 sm:border-b-0'>
                 <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
                     <div className='flex gap-2 items-center'>
                         <label className='text-slate-600 whitespace-nowrap font-bold'>Search Term</label>
@@ -156,11 +156,11 @@ const Search = () => {
                 </form>
                 
             </div>
-            <div className='flex flex-col gap-4 p-1 md:flex-8'>
-                <h1 className='text-2xl font-bold text-center text-black'>Search Results</h1>
-                <div className='flex flex-wrap gap-4 w-full'>
+            <div className='flex flex-col gap-4 p-1'>
+                <h1 className='text-2xl font-bold text-center text-black'>{sideBarData.searchTerm ? `Search results for "${sideBarData.searchTerm}"` : 'All Listings'}</h1>
+                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 w-full'>
                     {!loading && listings.length === 0 && (
-                        <p className='text-center text-slate-600 font-bold w-full'>No listings found!</p>
+                        <p className='text-center text-slate-600 font-bold'>No listings found!</p>
                     )}
                     {errorGettingListings && (
                         <p className='text-center text-red-500 w-full'>Error getting listings</p>

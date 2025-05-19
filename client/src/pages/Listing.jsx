@@ -4,9 +4,10 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { FaShare, FaMapMarkerAlt, FaBed, FaBath, FaParking, FaChair, FaPhoneAlt } from 'react-icons/fa';
+import { FaShare, FaMapMarkerAlt, FaBed, FaBath, FaParking, FaChair, FaPhoneAlt, FaTimes } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import Contact from '../components/Contact';
+
 const Listing = () => {
     const params = useParams();
     const [listing, setListing] = useState(null);
@@ -15,6 +16,7 @@ const Listing = () => {
     const [copied, setCopied] = useState(false);
     const { currentUser } = useSelector((state) => state.user);
     const [contactSeller, setContactSeller] = useState(false);
+    const [fullScreenImage, setFullScreenImage] = useState(null);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -37,6 +39,18 @@ const Listing = () => {
         }
         fetchListing();
     }, [params.id]);
+
+    // Close full screen image when pressing Escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                setFullScreenImage(null);
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, []);
+
     return (
         <main>
             <div className='container mx-auto'>
@@ -47,11 +61,37 @@ const Listing = () => {
                         <Swiper navigation modules={[Navigation]}>
                             {listing.imageUrls.length > 0 && listing.imageUrls.map((url) => (
                                 <SwiperSlide key={url}>
-                                    <div className='h-[500px]' style={{background: `url(${url}) center no-repeat`}}> 
+                                    <div 
+                                        className='h-[500px] cursor-pointer' 
+                                        style={{background: `url(${url}) center no-repeat`, backgroundSize: 'contain'}}
+                                        onClick={() => setFullScreenImage(url)}
+                                    > 
                                     </div>
                                 </SwiperSlide>
                             ))}
                         </Swiper>
+
+                        {/* Full Screen Image Modal */}
+                        {fullScreenImage && (
+                            <div 
+                                className='fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center'
+                                onClick={() => setFullScreenImage(null)}
+                            >
+                                <button 
+                                    className='absolute top-4 right-4 text-white text-2xl hover:text-gray-300'
+                                    onClick={() => setFullScreenImage(null)}
+                                >
+                                    <FaTimes />
+                                </button>
+                                <img 
+                                    src={fullScreenImage} 
+                                    alt="Full size" 
+                                    className='max-h-[90vh] max-w-[90vw] object-contain'
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                            </div>
+                        )}
+
                         <div className='fixed top-[13%] right-[3%] sm:right-[4%] md:right-[24%] z-10 bg-white rounded-full p-2 cursor-pointer'>
                             <FaShare onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
