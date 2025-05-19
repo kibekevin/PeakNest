@@ -6,14 +6,53 @@ import jwt from 'jsonwebtoken';
 
 export const signup = async (req, res, next) => {
     const { username, email, password } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const newUser = new User({ username, email, password:hashedPassword });
-    
+
+    // Input validation
+    if (!username || !email || !password) {
+        return next(errorHandler(400, 'All fields are required'));
+    }
+
+    if (password.length < 6) {
+        return next(errorHandler(400, 'Password must be at least 6 characters'));
+    }
+
+    if (username.length < 3) {
+        return next(errorHandler(400, 'Username must be at least 3 characters'));
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return next(errorHandler(400, 'Invalid email format'));
+    }
+
     try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ 
+            $or: [{ email }, { username }] 
+        });
+
+        if (existingUser) {
+            if (existingUser.email === email) {
+                return next(errorHandler(400, 'Email already exists'));
+            }
+            if (existingUser.username === username) {
+                return next(errorHandler(400, 'Username already exists'));
+            }
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        const newUser = new User({ 
+            username, 
+            email, 
+            password: hashedPassword 
+        });
+        
         await newUser.save();
-        res.status(201).json("User created successlly");
+        res.status(201).json({ message: "User created successfully" });
     } catch (error) {
-        next(error);
+        console.error('Signup error:', error);
+        next(errorHandler(500, 'Error creating user'));
     }
 };
 
